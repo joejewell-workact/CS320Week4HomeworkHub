@@ -1,0 +1,94 @@
+---
+- name: Install HTTPD, MariaDB, PHP, and supporting packages
+  ansible.builtin.dnf:
+    name: "{{ lamp_packages }}"
+    state: present
+
+- name: Ensure firewalld is enabled and running
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+  when: lamp_open_firewall
+
+- name: Open firewall for HTTP
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    immediate: true
+    state: enabled
+  when: lamp_open_firewall
+
+- name: Deploy httpd.conf from template
+  ansible.builtin.template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "httpd -t -f %s"
+  notify: restart httpd
+
+- name: Enable and start HTTPD
+  ansible.builtin.systemd:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: Enable and start PHP-FPM
+  ansible.builtin.systemd:
+    name: php-fpm
+    state: started
+    enabled: true
+
+- name: Enable and start MariaDB
+  ansible.builtin.systemd:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Set MariaDB root password
+  community.mysql.mysql_user:
+    name: root
+    password: "{{ mariadb_root_password }}"
+    host_all: true
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  no_log: true
+
+- name: Remove anonymous MariaDB users
+  community.mysql.mysql_user:
+    name: ""
+    host_all: true
+    state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    login_unix_socket: /var/lib/mysql/mysql.sock
+
+- name: Create application database
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    login_unix_socket: /var/lib/mysql/mysql.sock
+
+- name: Create application database user with credentials
+  community.mysql.mysql_user:
+    name: "{{ db_app_user }}"
+    password: "{{ db_app_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    host: "{{ item }}"
+    state: present
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  loop:
+    - localhost
+    - 127.0.0.1
+  no_log: true
+
+- name: Allow httpd to make outbound network connections to the database
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect_db
+    state: true
+    persistent: true

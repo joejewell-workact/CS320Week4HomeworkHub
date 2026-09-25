@@ -1,0 +1,14 @@
+---
+# variables
+document_root: /var/www/html
+app_relative_path: rolodex
+app_document_root: "{{ document_root }}/{{ app_relative_path }}"
+
+http_port: 80
+
+db_name: rolodex
+db_app_user: rolodex_app
+db_host: 127.0.0.1
+
+mariadb_root_password: "{{ vault_mariadb_root_password }}"
+db_app_password: "{{ vault_db_app_password }}"

@@ -1,0 +1,10 @@
+<?php
+// {{ ansible_managed }}
+// Database connection settings for the php-quickstart sample app.
+$databaseHost = '{{ db_host }}';
+$databaseUsername = '{{ db_app_user }}';
+$databasePassword = '{{ db_app_password }}';
+$databaseName = '{{ db_name }}';
+
+// Connect to the database
+$mysqli = mysqli_connect($databaseHost, $databaseUsername, $databasePassword, $databaseName);

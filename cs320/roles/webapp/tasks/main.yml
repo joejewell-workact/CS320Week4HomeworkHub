@@ -1,0 +1,75 @@
+---
+- name: Deploy phpinfo() index.php to the web root
+  ansible.builtin.copy:
+    src: phpinfo_index.php
+    dest: "{{ document_root }}/index.php"
+    owner: "{{ webapp_owner }}"
+    group: "{{ webapp_group }}"
+    mode: "0644"
+
+- name: Create application directory for the sample PHP/SQL app
+  ansible.builtin.file:
+    path: "{{ app_document_root }}"
+    state: directory
+    owner: "{{ webapp_owner }}"
+    group: "{{ webapp_group }}"
+    mode: "0755"
+
+- name: Deploy php-quickstart application files
+  ansible.builtin.copy:
+    src: "rolodex/{{ item }}"
+    dest: "{{ app_document_root }}/{{ item }}"
+    owner: "{{ webapp_owner }}"
+    group: "{{ webapp_group }}"
+    mode: "0644"
+  loop:
+    - index.php
+    - add.php
+    - edit.php
+    - delete.php
+    - styles.css
+
+- name: Template config.php with database connection settings
+  ansible.builtin.template:
+    src: rolodex/config.php.j2
+    dest: "{{ app_document_root }}/config.php"
+    owner: "{{ webapp_owner }}"
+    group: "{{ webapp_group }}"
+    mode: "0640"
+
+- name: Copy schema.sql to the target for import
+  ansible.builtin.copy:
+    src: schema.sql
+    dest: /tmp/rolodex_schema.sql
+    mode: "0600"
+
+- name: Import schema.sql into MariaDB
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: import
+    target: /tmp/rolodex_schema.sql
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  no_log: true
+
+- name: Remove temporary copy of schema.sql
+  ansible.builtin.file:
+    path: /tmp/rolodex_schema.sql
+    state: absent
+
+- name: Confirm the phpinfo() page loads through httpd
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ http_port }}/index.php"
+    return_content: true
+    status_code: 200
+  register: phpinfo_check
+  failed_when: "'phpinfo()' not in phpinfo_check.content"
+
+- name: Confirm the sample PHP application loads and connects to MariaDB
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ http_port }}/{{ app_relative_path }}/index.php"
+    return_content: true
+    status_code: 200
+  register: app_check
+  failed_when: "'MariaDB Rolodex' not in app_check.content"

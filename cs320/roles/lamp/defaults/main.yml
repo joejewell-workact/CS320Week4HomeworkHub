@@ -1,0 +1,11 @@
+---
+lamp_packages:
+  - httpd
+  - mariadb-server
+  - php
+  - php-mysqlnd
+  - php-fpm
+  - python3-PyMySQL
+  - firewalld
+
+lamp_open_firewall: true

@@ -1,0 +1,27 @@
+---
+
+- name: Deploy LAMP stack and sample PHP application
+  hosts: lamp_servers
+  become: true
+
+  roles:
+    - lamp
+    - webapp
+
+  tasks:
+    - name: Reboot the server after LAMP and application deployment
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+        msg: "Rebooting after CS320 LAMP lab deployment"
+
+    - name: Confirm services are active after reboot
+      ansible.builtin.service_facts:
+
+    - name: Assert httpd and mariadb came back up after reboot
+      ansible.builtin.assert:
+        that:
+          - "services['httpd.service'].state == 'running'"
+          - "services['mariadb.service'].state == 'running'"
+          - "services['php-fpm.service'].state == 'running'"
+        fail_msg: "One or more required services are not running after reboot"
+        success_msg: "httpd, mariadb, and php-fpm are all running after reboot"

@@ -1,0 +1,90 @@
+
+PLAY [Deploy LAMP stack and sample PHP application] ****************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [lampserver]
+
+TASK [lamp : Install HTTPD, MariaDB, PHP, and supporting packages] *************
+ok: [lampserver]
+
+TASK [lamp : Ensure firewalld is enabled and running] **************************
+ok: [lampserver]
+
+TASK [lamp : Open firewall for HTTP] *******************************************
+ok: [lampserver]
+
+TASK [lamp : Deploy httpd.conf from template] **********************************
+ok: [lampserver]
+
+TASK [lamp : Enable and start HTTPD] *******************************************
+ok: [lampserver]
+
+TASK [lamp : Enable and start PHP-FPM] *****************************************
+ok: [lampserver]
+
+TASK [lamp : Enable and start MariaDB] *****************************************
+ok: [lampserver]
+
+TASK [lamp : Set MariaDB root password] ****************************************
+[WARNING]: MariaDB has been detected: its support will be dropped in 6.0.0. For MariaDB automation, please use the ansible.mariadb collection instead.
+changed: [lampserver]
+
+TASK [lamp : Remove anonymous MariaDB users] ***********************************
+ok: [lampserver]
+
+TASK [lamp : Create application database] **************************************
+changed: [lampserver]
+
+TASK [lamp : Create application database user with credentials] ****************
+changed: [lampserver] => (item=(censored due to no_log))
+changed: [lampserver] => (item=(censored due to no_log))
+
+TASK [lamp : Allow httpd to make outbound network connections to the database] ***
+changed: [lampserver]
+
+TASK [webapp : Deploy phpinfo() index.php to the web root] *********************
+changed: [lampserver]
+
+TASK [webapp : Create application directory for the sample PHP/SQL app] ********
+changed: [lampserver]
+
+TASK [webapp : Deploy php-quickstart application files] ************************
+changed: [lampserver] => (item=index.php)
+changed: [lampserver] => (item=add.php)
+changed: [lampserver] => (item=edit.php)
+changed: [lampserver] => (item=delete.php)
+changed: [lampserver] => (item=styles.css)
+
+TASK [webapp : Template config.php with database connection settings] **********
+changed: [lampserver]
+
+TASK [webapp : Copy schema.sql to the target for import] ***********************
+changed: [lampserver]
+
+TASK [webapp : Import schema.sql into MariaDB] *********************************
+changed: [lampserver]
+
+TASK [webapp : Remove temporary copy of schema.sql] ****************************
+changed: [lampserver]
+
+TASK [webapp : Confirm the phpinfo() page loads through httpd] *****************
+ok: [lampserver]
+
+TASK [webapp : Confirm the sample PHP application loads and connects to MariaDB] ***
+ok: [lampserver]
+
+TASK [Reboot the server after LAMP and application deployment] *****************
+changed: [lampserver]
+
+TASK [Confirm services are active after reboot] ********************************
+ok: [lampserver]
+
+TASK [Assert httpd and mariadb came back up after reboot] **********************
+ok: [lampserver] => {
+    "changed": false,
+    "msg": "httpd, mariadb, and php-fpm are all running after reboot"
+}
+
+PLAY RECAP *********************************************************************
+lampserver                 : ok=25   changed=12   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
